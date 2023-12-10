@@ -1,4 +1,4 @@
-package utils;
+package org.zju.utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

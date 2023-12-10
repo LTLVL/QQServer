@@ -1,4 +1,4 @@
-package org.zju.common;
+package org.zju.pojo;
 
 public interface MessageType {
     String MESSAGE_LOGIN_SUCCEED = "1";

@@ -1,41 +1,48 @@
-package QQServer.service;
+package org.zju.service;
 
-import common.Message;
-import common.MessageType;
-import common.User;
+import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.zju.mapper.userMapper;
+import org.zju.pojo.Message;
+import org.zju.pojo.MessageType;
+import org.zju.pojo.User;
+import org.zju.utils.SqlSessionFactoryBuilder;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class QQServer {
     private ServerSocket ss = null;
-    private static ConcurrentHashMap<String, User> validUses = new ConcurrentHashMap<>();
 
-    static {
-        validUses.put("100", new User("100", "123456"));
-        validUses.put("200", new User("200", "123456"));
-        validUses.put("300", new User("300", "123456"));
-        validUses.put("400", new User("400", "123456"));
-        validUses.put("500", new User("500", "123456"));
-    }
 
-    private boolean CheckUser(String id, String pd) {
-        User user = validUses.get(id);
-        if(user==null){
+    private boolean CheckUser(User user) throws IOException {
+        SqlSessionFactory sqlSessionFactory = SqlSessionFactoryBuilder.build();
+        SqlSession sqlSession = sqlSessionFactory.openSession();
+        userMapper users = sqlSession.getMapper(userMapper.class);
+        if (user.getPhone() != null && user.getAge() != null) {
+            //注册用户
+            User actulaUser = users.selectByName(user.getName());
+            if (actulaUser != null) {
+                return false;
+            }
+            users.saveUser(user);
+            sqlSession.commit();
+            return true;
+        }
+        User actulaUser = users.selectByName(user.getName());
+
+        if (actulaUser == null) {
             System.out.println("用户不存在");
             return false;
-        }
-        else if(!user.getPasswd().equals(pd)){
+        } else if (!user.getPassword().equals(actulaUser.getPassword())) {
             System.out.println("密码错误");
             return false;
-        }
-        else {
+        } else {
             return true;
         }
     }
@@ -53,19 +60,19 @@ public class QQServer {
                     //简化数据库
                     Message message = new Message();
                     ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-                    if (CheckUser(user.getId(), user.getPasswd())) {
+                    if (CheckUser(user)) {
                         message.setMesType(MessageType.MESSAGE_LOGIN_SUCCEED);
                         oos.writeObject(message);
-                        ServerConnect serverConnect = new ServerConnect(socket, user.getId());
+                        ServerConnect serverConnect = new ServerConnect(socket, user.getName());
                         serverConnect.start();
-                        ManageClientThread.Add(user.getId(), serverConnect);
+                        ManageClientThread.Add(user.getName(), serverConnect);
                         ConcurrentHashMap<String, Message> mes = ManageClientThread.getMes();
-                        for (String key:mes.keySet()
-                             ) {
-                            if(Objects.equals(user.getId(), key)){
+                        for (String key : mes.keySet()
+                        ) {
+                            if (Objects.equals(user.getName(), key)) {
                                 ObjectOutputStream oos2 = new ObjectOutputStream(socket.getOutputStream());
                                 oos2.writeObject(mes.get(key));
-                                System.out.println(user.getId()+"收到离线消息");
+                                System.out.println(user.getName() + "收到离线消息");
                             }
                         }
                     } else {

@@ -1,10 +1,10 @@
-package org.zju.QQFrame;
+package org.zju.frame;
 
-import QQServer.service.QQServer;
+import org.zju.service.QQServer;
 
 import java.io.IOException;
 
-public class QQframe {
+public class Frame {
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         new QQServer();
     }

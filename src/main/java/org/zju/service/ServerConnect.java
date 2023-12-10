@@ -1,8 +1,8 @@
-package QQServer.service;
+package org.zju.service;
 
-import common.Message;
-import common.MessageType;
 
+import org.zju.pojo.Message;
+import org.zju.pojo.MessageType;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -10,7 +10,7 @@ import java.net.Socket;
 
 public class ServerConnect extends Thread {
     private Socket socket;
-    private String userid;
+    private String name;
     public boolean loop = true;
 
     public Socket getSocket() {
@@ -21,59 +21,65 @@ public class ServerConnect extends Thread {
         this.socket = socket;
     }
 
-    public String getUserid() {
-        return userid;
+    public String getUserName() {
+        return name;
     }
 
-    public void setUserid(String userid) {
-        this.userid = userid;
+    public void setUserid(String name) {
+        this.name = name;
     }
 
-    public ServerConnect(Socket socket, String userid) {
+    public ServerConnect(Socket socket, String name) {
         this.socket = socket;
-        this.userid = userid;
+        this.name = name;
     }
 
     @Override
     public void run() {
+        label:
         while (loop) {
             try {
-                System.out.println("服务端和客户端" + userid + "建立连接，正在读取数据");
+                System.out.println("服务端和客户端" + name + "建立连接，正在读取数据");
                 ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
                 Message message = (Message) ois.readObject();
-                if (message.getMesType().equals(MessageType.MESSAGE_GET_ONLINE_FRIEND)) {
-                    System.out.println(message.getSender() + " 查询在线用户列表");
-                    String allOnlineUser = ManageClientThread.gerAllOnlineUser();
-                    Message message1 = new Message();
-                    message1.setContent(allOnlineUser);
-                    message1.setGetter(message.getSender());
-                    message1.setMesType(MessageType.MESSAGE_RET_ONLINE_FRIEND);
-                    ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-                    oos.writeObject(message1);
-                } else if (message.getMesType().equals(MessageType.MESSAGE_CLIENT_EXIT)) {
-                    System.out.println("用户：" + message.getSender() + "退出系统");
-                    ObjectOutputStream oos = new ObjectOutputStream(ManageClientThread.getServerConnectThread(message.getGetter()).socket.getOutputStream());
-                    oos.writeObject(message);
-                    socket.close();
-                    ManageClientThread.Offline(message.getSender());
-                    break;
-                } else if (message.getMesType().equals(MessageType.MESSAGE_CLIENT_PRIVATE_MESSAGE)) {
-                    if (ManageClientThread.getServerConnectThread(message.getGetter()) == null) {
-                        ManageClientThread.AddMes(message.getGetter(),message);
-                        System.out.println("用户 " + message.getGetter() + "不在线，已发送留言");
-                    } else {
+                switch (message.getMesType()) {
+                    case MessageType.MESSAGE_GET_ONLINE_FRIEND -> {
+                        System.out.println(message.getSender() + " 查询在线用户列表");
+                        String allOnlineUser = ManageClientThread.gerAllOnlineUser();
+                        Message message1 = new Message();
+                        message1.setContent(allOnlineUser);
+                        message1.setGetter(message.getSender());
+                        message1.setMesType(MessageType.MESSAGE_RET_ONLINE_FRIEND);
+                        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+                        oos.writeObject(message1);
+                    }
+                    case MessageType.MESSAGE_CLIENT_EXIT -> {
+                        System.out.println("用户：" + message.getSender() + "退出系统");
                         ObjectOutputStream oos = new ObjectOutputStream(ManageClientThread.getServerConnectThread(message.getGetter()).socket.getOutputStream());
                         oos.writeObject(message);
-                        System.out.println("用户 " + message.getSender() + "向用户 " + message.getGetter() + "发送了一条私聊消息");
+                        socket.close();
+                        ManageClientThread.Offline(message.getSender());
+                        break label;
                     }
-
-                } else if (message.getMesType().equals(MessageType.MESSAGE_COMM_MES)) {
-                    ManageClientThread.CommonMes(message);
-                    System.out.println("用户 " + message.getSender() + " 群发了一条消息");
-                } else if (message.getMesType().equals(MessageType.MESSAGE_CLIENT_FILE)) {
-                    ObjectOutputStream oos = new ObjectOutputStream(ManageClientThread.getServerConnectThread(message.getGetter()).socket.getOutputStream());
-                    oos.writeObject(message);
-                    System.out.println("用户 " + message.getSender() + "向用户 " + message.getGetter() + "发送了文件");
+                    case MessageType.MESSAGE_CLIENT_PRIVATE_MESSAGE -> {
+                        if (ManageClientThread.getServerConnectThread(message.getGetter()) == null) {
+                            ManageClientThread.AddMes(message.getGetter(), message);
+                            System.out.println("用户 " + message.getGetter() + "不在线，已发送留言");
+                        } else {
+                            ObjectOutputStream oos = new ObjectOutputStream(ManageClientThread.getServerConnectThread(message.getGetter()).socket.getOutputStream());
+                            oos.writeObject(message);
+                            System.out.println("用户 " + message.getSender() + "向用户 " + message.getGetter() + "发送了一条私聊消息");
+                        }
+                    }
+                    case MessageType.MESSAGE_COMM_MES -> {
+                        ManageClientThread.CommonMes(message);
+                        System.out.println("用户 " + message.getSender() + " 群发了一条消息");
+                    }
+                    case MessageType.MESSAGE_CLIENT_FILE -> {
+                        ObjectOutputStream oos = new ObjectOutputStream(ManageClientThread.getServerConnectThread(message.getGetter()).socket.getOutputStream());
+                        oos.writeObject(message);
+                        System.out.println("用户 " + message.getSender() + "向用户 " + message.getGetter() + "发送了文件");
+                    }
                 }
             } catch (IOException ignored) {
 

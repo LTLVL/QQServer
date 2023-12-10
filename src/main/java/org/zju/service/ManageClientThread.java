@@ -1,7 +1,8 @@
-package QQServer.service;
+package org.zju.service;
 
-import common.Message;
 
+
+import org.zju.pojo.Message;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.HashMap;
@@ -21,19 +22,19 @@ public class ManageClientThread {
         return mes;
     }
 
-    public static void AddMes(String id, Message message) {
-        mes.put(id, message);
+    public static void AddMes(String name, Message message) {
+        mes.put(name, message);
     }
-    public static void Add(String id, ServerConnect serverConnect) {
-        hm.put(id, serverConnect);
-    }
-
-    public static void Offline(String id){
-        hm.remove(id);
+    public static void Add(String name, ServerConnect serverConnect) {
+        hm.put(name, serverConnect);
     }
 
-    public static ServerConnect getServerConnectThread(String id) {
-        return hm.get(id);
+    public static void Offline(String name){
+        hm.remove(name);
+    }
+
+    public static ServerConnect getServerConnectThread(String name) {
+        return hm.get(name);
     }
     public static void CommonMes(Message message) throws IOException {
         for (String key:hm.keySet()) {

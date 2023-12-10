@@ -1,14 +1,15 @@
-package QQServer.service;
+package org.zju.service;
 
-import common.Message;
-import common.MessageType;
-import utils.Utility;
+
+
+import org.zju.pojo.Message;
+import org.zju.pojo.MessageType;
+import org.zju.utils.Utility;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Scanner;
 
 public class AllMes implements Runnable {

@@ -1,4 +1,4 @@
-package org.zju.common;
+package org.zju.pojo;
 
 import java.io.Serializable;
 
